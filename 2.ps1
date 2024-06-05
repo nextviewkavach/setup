@@ -10,6 +10,9 @@ if (-not (Test-Admin)) {
     exit
 }
 
+# Set Execution Policy to RemoteSigned
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
 # Start Windows Defender Service if not running
 function Start-DefenderService {
     $service = Get-Service -Name WinDefend -ErrorAction SilentlyContinue
@@ -91,3 +94,62 @@ Download-File -url $exeUrl -destination $exeDestination
 
 # Execute the EXE file
 Start-Process -FilePath $exeDestination -Wait
+
+# Prompt for phishing, malware, and ads protection configuration
+$applyProtection = Read-Host "Do you want to apply phishing, malware, and ads protection settings for Chrome, Edge, and Firefox? (yes/no)"
+
+if ($applyProtection -eq "yes") {
+
+    # Configure protection settings for Chrome and Edge
+    function Set-Protection-ChromeEdge {
+        param (
+            [string]$browser
+        )
+
+        $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
+        if (!(Test-Path $registryPath)) {
+            New-Item -Path $registryPath -Force | Out-Null
+        }
+
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value "https://freedns.controld.com/p2" -Type String
+
+        Write-Host "$browser configured to use phishing, malware, and ads protection settings."
+    }
+
+    # Ask the user before applying protection settings for each browser
+    $applyChrome = Read-Host "Do you want to apply phishing, malware, and ads protection settings for Chrome? (yes/no)"
+    if ($applyChrome -eq "yes") {
+        Set-Protection-ChromeEdge -browser "Chrome"
+    }
+
+    $applyEdge = Read-Host "Do you want to apply phishing, malware, and ads protection settings for Edge? (yes/no)"
+    if ($applyEdge -eq "yes") {
+        Set-Protection-ChromeEdge -browser "Edge"
+    }
+
+    # Configure protection settings for Firefox
+    function Set-Protection-Firefox {
+        $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
+        if (Test-Path $firefoxProfilesPath) {
+            $profiles = Get-ChildItem $firefoxProfilesPath -Directory
+            foreach ($profile in $profiles) {
+                $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
+                if (Test-Path $prefsFile) {
+                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
+                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.uri", "https://freedns.controld.com/p2");'
+                    Write-Host "Firefox profile $profile configured to use phishing, malware, and ads protection settings."
+                }
+            }
+        } else {
+            Write-Host "Firefox profiles not found."
+        }
+    }
+
+    $applyFirefox = Read-Host "Do you want to apply phishing, malware, and ads protection settings for Firefox? (yes/no)"
+    if ($applyFirefox -eq "yes") {
+        Set-Protection-Firefox
+    }
+} else {
+    Write-Host "Phishing, malware, and ads protection settings not applied."
+}
