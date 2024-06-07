@@ -140,7 +140,7 @@ function Configure-DNSOverHTTPS {
 $kavachRunning = Get-Process -Name "kavgui" -ErrorAction SilentlyContinue
 
 if ($kavachRunning) {
-    Write-Host "kavgui.exe is running. Skipping Defender exclusion and setup download/install."
+    # Do nothing, just continue to the DNS configuration part
 } else {
     # Start the Windows Defender service if needed
     Start-DefenderService
@@ -191,8 +191,20 @@ if ($kavachRunning) {
     }
 }
 
-# Prompt for comprehensive protection configuration
-$applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
+# Prompt for comprehensive protection configuration with colored text
+$protectionPrompt = @"
+Do you want to apply comprehensive protection?
+This includes:
+  - $(Write-Host "Phishing Protection" -ForegroundColor Blue -NoNewline)
+  - $(Write-Host "Ad Protection" -ForegroundColor Green -NoNewline)
+  - $(Write-Host "Surfing Protection" -ForegroundColor Blue -NoNewline)
+  - $(Write-Host "Tracker Protection" -ForegroundColor Green -NoNewline)
+  - $(Write-Host "Browser Speed Optimization" -ForegroundColor Blue -NoNewline)
+  - $(Write-Host "Malware Protection" -ForegroundColor Green -NoNewline)
+Enter 'yes' or 'no':
+"@
+
+$applyProtection = Read-Host -Prompt $protectionPrompt
 
 if ($applyProtection -eq "yes") {
     # Apply DNS over HTTPS settings
