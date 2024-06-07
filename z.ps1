@@ -14,6 +14,27 @@ if (-not (Test-Admin)) {
 # Set Execution Policy to RemoteSigned
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
+# Function to display ASCII animation
+function Display-ASCII-Animation {
+    $frames = @(
+        "Kavach Advance Setup",
+        "Kavach Advance Setup.",
+        "Kavach Advance Setup..",
+        "Kavach Advance Setup..."
+    )
+
+    for ($i = 0; $i -lt 3; $i++) {
+        foreach ($frame in $frames) {
+            Clear-Host
+            Write-Host $frame
+            Start-Sleep -Milliseconds 200
+        }
+    }
+}
+
+# Display the ASCII animation
+Display-ASCII-Animation
+
 # Function to display progress bar
 function Show-Progress {
     param (
@@ -66,52 +87,8 @@ function Download-File {
     Write-Host "Download completed successfully."
 }
 
-# Start the Windows Defender service if needed
-Start-DefenderService
-
-# Add Exclusion Path to Windows Defender
-try {
-    Add-MpPreference -ExclusionPath 'C:\Program Files (x86)\'
-    Write-Host "Exclusion path added successfully."
-} catch {
-    Write-Host "Failed to add exclusion path. Please check if the Windows Defender service is running."
-}
-
-# Define URLs for the EXE files
-$exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
-$exeUrlZ = "https://nextviewkavach.com/build/KavachZ+Win7.exe"
-
-# Ask the user which setup they want to install
-$choice = Read-Host "Which setup do you want to install? Enter 1 for KAVACH A+, Enter 2 for KAVACH Z+"
-
-if ($choice -eq "1") {
-    $exeUrl = $exeUrlA
-    $exeName = "KavachA_Win7.exe"
-    Write-Host "You chose to install KAVACH A+"
-} elseif ($choice -eq "2") {
-    $exeUrl = $exeUrlZ
-    $exeName = "KavachZ_Win7.exe"
-    Write-Host "You chose to install KAVACH Z+"
-} else {
-    Write-Host "Invalid choice. Exiting."
-    exit
-}
-
-# Define the destination path for the downloaded EXE file
-$exeDestination = "$env:TEMP\$exeName"
-
-# Download the EXE file with progress bar
-Download-File -url $exeUrl -destination $exeDestination
-
-# Execute the EXE file
-Start-Process -FilePath $exeDestination -Wait
-
-# Prompt for comprehensive protection configuration
-$applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
-
-if ($applyProtection -eq "yes") {
-
-    # Define the DNS over HTTPS server URL
+# Function to configure DNS over HTTPS
+function Configure-DNSOverHTTPS {
     $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
 
     # Configure protection settings for Chrome and Edge
@@ -157,6 +134,69 @@ if ($applyProtection -eq "yes") {
 
     # Apply protection settings for Firefox
     Set-Protection-Firefox
+}
+
+# Check if kavgui.exe is running
+$kavachRunning = Get-Process -Name "kavgui" -ErrorAction SilentlyContinue
+
+if ($kavachRunning) {
+    Write-Host "kavgui.exe is running. Skipping Defender exclusion and setup download/install."
+} else {
+    # Start the Windows Defender service if needed
+    Start-DefenderService
+
+    # Add Exclusion Path to Windows Defender
+    try {
+        Add-MpPreference -ExclusionPath 'C:\Program Files (x86)\'
+        Write-Host "Exclusion path added successfully."
+    } catch {
+        Write-Host "Failed to add exclusion path. Please check if the Windows Defender service is running."
+    }
+
+    # Define URLs for the EXE files
+    $exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
+    $exeUrlZ = "https://nextviewkavach.com/build/KavachZ+Win7.exe"
+
+    # Ask the user which setup they want to install
+    $choice = Read-Host "Which setup do you want to install? Enter 1 for KAVACH A+, Enter 2 for KAVACH Z+"
+
+    if ($choice -eq "1") {
+        $exeUrl = $exeUrlA
+        $exeName = "KavachA_Win7.exe"
+        Write-Host "You chose to install KAVACH A+"
+    } elseif ($choice -eq "2") {
+        $exeUrl = $exeUrlZ
+        $exeName = "KavachZ_Win7.exe"
+        Write-Host "You chose to install KAVACH Z+"
+    } else {
+        Write-Host "Invalid choice. Exiting."
+        exit
+    }
+
+    # Define the destination path for the downloaded EXE file
+    $exeDestination = "$env:TEMP\$exeName"
+
+    # Download the EXE file with progress bar
+    Download-File -url $exeUrl -destination $exeDestination
+
+    # Execute the EXE file
+    Start-Process -FilePath $exeDestination -Wait
+
+    # Confirm successful installation before proceeding
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "KAVACH installation completed successfully."
+    } else {
+        Write-Host "KAVACH installation failed. Please try again."
+        exit
+    }
+}
+
+# Prompt for comprehensive protection configuration
+$applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
+
+if ($applyProtection -eq "yes") {
+    # Apply DNS over HTTPS settings
+    Configure-DNSOverHTTPS
 } else {
     Write-Host "Comprehensive protection settings not applied."
 }
