@@ -93,7 +93,7 @@ try {
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
-    Write-Host "KAVGUI.exe is already running. Skipping Defender exclusion and setup download."
+    Write-Host "kavgui.exe is already running. Skipping Defender exclusion and setup download."
 } else {
     # Define URLs for the EXE files
     $exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
