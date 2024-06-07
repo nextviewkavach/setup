@@ -54,41 +54,45 @@ function Download-File {
         [string]$destination
     )
 
-    $request = [System.Net.HttpWebRequest]::Create($url)
-    $request.Method = "GET"
-    $response = $request.GetResponse()
-    $totalBytes = $response.ContentLength
+    try {
+        $request = [System.Net.HttpWebRequest]::Create($url)
+        $request.Method = "GET"
+        $response = $request.GetResponse()
+        $totalBytes = $response.ContentLength
 
-    $responseStream = $response.GetResponseStream()
-    $fileStream = New-Object IO.FileStream ($destination, [IO.FileMode]::Create)
+        $responseStream = $response.GetResponseStream()
+        $fileStream = [System.IO.File]::Create($destination)
 
-    $buffer = New-Object byte[] 8192
-    $totalReadBytes = 0
-    $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
-
-    while ($readBytes -gt 0) {
-        $fileStream.Write($buffer, 0, $readBytes)
-        $totalReadBytes += $readBytes
+        $buffer = New-Object byte[] 8192
+        $totalReadBytes = 0
         $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
-        $percentComplete = [math]::Round(($totalReadBytes / $totalBytes) * 100, 2)
-        Show-Progress -Activity "Downloading $url" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
-    }
 
-    $fileStream.Close()
-    $responseStream.Close()
+        while ($readBytes -gt 0) {
+            $fileStream.Write($buffer, 0, $readBytes)
+            $totalReadBytes += $readBytes
+            $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
+            $percentComplete = [math]::Round(($totalReadBytes / $totalBytes) * 100, 2)
+            Show-Progress -Activity "Downloading $url" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
+        }
 
-    Write-Host "Download completed successfully."
+        $fileStream.Close()
+        $responseStream.Close()
 
-    # Prompt for additional protection configurations
-    $applyExtraProtection = Read-Host "Do you want to apply Ads Protection, Phishing Protection, Tracker Protection, Safe Browser Protection, and Malwaretizing Protection? Type 'yes' to apply."
+        Write-Host "Download completed successfully."
 
-    if ($applyExtraProtection -eq "yes") {
-        Configure-ADProtection
-        Configure-PhishingProtection
-        Configure-DNSProtection
-        Write-Host "Browsers have been configured to use comprehensive protection settings."
-    } else {
-        Write-Host "Skipping additional protection configurations."
+        # Prompt for additional protection configurations
+        $applyExtraProtection = Read-Host "Do you want to apply Ads Protection, Phishing Protection, Tracker Protection, Safe Browser Protection, and Malwaretizing Protection? Type 'yes' to apply."
+
+        if ($applyExtraProtection -eq "yes") {
+            Configure-ADProtection
+            Configure-PhishingProtection
+            Configure-DNSProtection
+            Write-Host "Browsers have been configured to use comprehensive protection settings."
+        } else {
+            Write-Host "Skipping additional protection configurations."
+        }
+    } catch {
+        Write-Host "Error during file download: $_"
     }
 }
 
@@ -185,14 +189,15 @@ if (Is-KAVGUIRunning) {
     }
 } else {
     $antivirusChoice = Read-Host "Which antivirus setup do you want to install? 1. KAVACH A+ 2. KAVACH Z+ Enter the number (1/2):"
+    $destination = "$env:USERPROFILE\Documents\"
     switch ($antivirusChoice) {
         1 {
             $url = "https://nextviewkavach.com/build/KavachA+.exe"
-            $destination = "C:\Temp\kavach-a-plus-setup.exe"
+            $destination += "KavachA+.exe"
         }
         2 {
             $url = "https://nextviewkavach.com/build/KavachZ+.exe"
-            $destination = "C:\Temp\kavach-z-plus-setup.exe"
+            $destination += "KavachZ+.exe"
         }
         default {
             Write-Host "Invalid choice. Exiting script."
