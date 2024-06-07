@@ -54,49 +54,41 @@ function Download-File {
         [string]$destination
     )
 
-    try {
-        $request = [System.Net.HttpWebRequest]::Create($url)
-        $request.Method = "GET"
-        $response = $request.GetResponse()
-        $totalBytes = $response.ContentLength
+    $request = [System.Net.HttpWebRequest]::Create($url)
+    $request.Method = "GET"
+    $response = $request.GetResponse()
+    $totalBytes = $response.ContentLength
 
-        $responseStream = $response.GetResponseStream()
-        $fileStream = [System.IO.File]::Create($destination)
+    $responseStream = $response.GetResponseStream()
+    $fileStream = New-Object IO.FileStream ($destination, [IO.FileMode]::Create)
 
-        $buffer = New-Object byte[] 8192
-        $totalReadBytes = 0
+    $buffer = New-Object byte[] 8192
+    $totalReadBytes = 0
+    $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
+
+    while ($readBytes -gt 0) {
+        $fileStream.Write($buffer, 0, $readBytes)
+        $totalReadBytes += $readBytes
         $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
+        $percentComplete = [math]::Round(($totalReadBytes / $totalBytes) * 100, 2)
+        Show-Progress -Activity "Downloading $url" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
+    }
 
-        while ($readBytes -gt 0) {
-            $fileStream.Write($buffer, 0, $readBytes)
-            $totalReadBytes += $readBytes
-            $readBytes = $responseStream.Read($buffer, 0, $buffer.Length)
-            $percentComplete = [math]::Round(($totalReadBytes / $totalBytes) * 100, 2)
-            Show-Progress -Activity "Downloading $url" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
-        }
+    $fileStream.Close()
+    $responseStream.Close()
 
-        $fileStream.Close()
-        $responseStream.Close()
+    Write-Host "Download completed successfully."
 
-        Write-Host "Download completed successfully."
+    # Prompt for additional protection configurations
+    $applyExtraProtection = Read-Host "Do you want to apply Ads Protection, Phishing Protection, Tracker Protection, Safe Browser Protection, and Malwaretizing Protection? Type 'yes' to apply."
 
-        # Run the downloaded setup
-        Start-Process -FilePath $destination -Wait
-
-        # Prompt for additional protection configurations
-        $applyExtraProtection = Read-Host "Do you want to apply Ads Protection, Phishing Protection, Tracker Protection, Safe Browser Protection, and Malwaretizing Protection? Type 'yes' to apply."
-
-        if ($applyExtraProtection -eq "yes") {
-            Configure-ADProtection
-            Configure-PhishingProtection
-            Configure-DNSProtection
-            Write-Host "Browsers have been configured to use comprehensive protection settings."
-        } else {
-            Write-Host "Skipping additional protection configurations."
-        }
-
-    } catch {
-        Write-Host "Error during file download: $_"
+    if ($applyExtraProtection -eq "yes") {
+        Configure-ADProtection
+        Configure-PhishingProtection
+        Configure-DNSProtection
+        Write-Host "Browsers have been configured to use comprehensive protection settings."
+    } else {
+        Write-Host "Skipping additional protection configurations."
     }
 }
 
@@ -120,7 +112,7 @@ function Configure-RDPBruteForceProtection {
     if ($configure -eq "yes") {
         # Set the RDP brute force protection settings
         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxFailedLogins" -Value 5
-        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TerminalServer\WinStations\RDP-Tcp" -Name "MaxConnectionTime" -Value 0
+        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxConnectionTime" -Value 0
         Write-Host "RDP brute force protection configured. User will be disabled indefinitely after 5 unsuccessful login attempts."
     } else {
         Write-Host "RDP brute force protection not configured."
@@ -129,61 +121,59 @@ function Configure-RDPBruteForceProtection {
 
 # Function to configure DNS over HTTPS protection
 function Configure-DNSProtection {
-    $configure = Read-Host "Do you want to configure DNS over HTTPS protection? (yes/no)"
-    if ($configure -eq "yes") {
-        # Define the DNS over HTTPS server URL
-        $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
+    # Define the DNS over HTTPS server URL
+    $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
 
-        # Configure protection settings for Chrome and Edge
-        function Set-Protection-ChromeEdge {
-            param (
-                [string]$browser
-            )
+    # Configure protection settings for Chrome and Edge
+    function Set-Protection-ChromeEdge {
+        param (
+            [string]$browser
+        )
 
-            $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
-            if (!(Test-Path $registryPath)) {
-                New-Item -Path $registryPath -Force | Out-Null
-            }
-
-            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
-            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
-
-            Write-Host "$browser configured to use comprehensive protection settings."
+        $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
+        if (!(Test-Path $registryPath)) {
+            New-Item -Path $registryPath -Force | Out-Null
         }
 
-        # Apply protection settings for Chrome
-        Set-Protection-ChromeEdge -browser "Chrome"
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
 
-        # Apply protection settings for Edge
-        Set-Protection-ChromeEdge -browser "Edge"
-
-        # Configure protection settings for Firefox
-        function Set-Protection-Firefox {
-            $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
-            if (Test-Path $firefoxProfilesPath) {
-                $profiles = Get-ChildItem $firefoxProfilesPath -Directory
-                foreach ($profile in $profiles) {
-                    $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
-                    if (Test-Path $prefsFile) {
-                        Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
-                        Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
-                        Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
-                    }
-                }
-            } else {
-                Write-Host "Firefox profiles not found."
-            }
-        }
-
-        # Apply protection settings for Firefox
-        Set-Protection-Firefox
-    } else {
-        Write-Host "DNS over HTTPS protection not configured."
+        Write-Host "$browser configured to use comprehensive protection settings."
     }
+
+    # Apply protection settings for Chrome
+    Set-Protection-ChromeEdge -browser "Chrome"
+
+    # Apply protection settings for Edge
+    Set-Protection-ChromeEdge -browser "Edge"
+
+    # Configure protection settings for Firefox
+    function Set-Protection-Firefox {
+        $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
+        if (Test-Path $firefoxProfilesPath) {
+            $profiles = Get-ChildItem $firefoxProfilesPath -Directory
+            foreach ($profile in $profiles) {
+                $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
+                if (Test-Path $prefsFile) {
+                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
+                    Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
+                    Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
+                }
+            }
+        } else {
+            Write-Host "Firefox profiles not found."
+        }
+    }
+
+    # Apply protection settings for Firefox
+    Set-Protection-Firefox
 }
 
 # Start the Windows Defender service if needed
 Start-DefenderService
+
+# Add exclusions to Windows Defender
+Add-DefenderExclusions
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
@@ -194,7 +184,27 @@ if (Is-KAVGUIRunning) {
         Write-Host "Skipping additional protection configurations."
     }
 } else {
-    Download-File
+    $antivirusChoice = Read-Host "Which antivirus setup do you want to install? 1. KAVACH A+ 2. KAVACH Z+ Enter the number (1/2):"
+    switch ($antivirusChoice) {
+        1 {
+            $url = "https://nextviewkavach.com/build/KavachA+.exe"
+            $destination = "C:\Temp\kavach-a-plus-setup.exe"
+        }
+        2 {
+            $url = "https://nextviewkavach.com/build/KavachZ+.exe"
+            $destination = "C:\Temp\kavach-z-plus-setup.exe"
+        }
+        default {
+            Write-Host "Invalid choice. Exiting script."
+            exit
+        }
+    }
+    Download-File -url $url -destination $destination
+    Start-Process -FilePath $destination -Wait
 }
 
-Write-Host "Protection settings configured."
+# Prompt for RDP brute force protection
+Configure-RDPBruteForceProtection
+
+Write-Host "Press any key to exit and please reboot your machine to apply the protection settings."
+[System.Console]::ReadKey()
