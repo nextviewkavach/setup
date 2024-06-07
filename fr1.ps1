@@ -224,10 +224,3 @@ if (Is-KAVGUIRunning) {
         Configure-ADAndPhishingProtection
     } else {
         Write-Host "Skipping additional protection configurations."
-    }
-}
-
-Write-Host "All configurations done."
-
-# Final message and exit
-Read-Host "Press any key to exit
