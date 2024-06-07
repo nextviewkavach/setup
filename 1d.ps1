@@ -93,7 +93,7 @@ if ($kavachRunning) {
         Write-Host "The EXE file is not executable. Please run it manually."
     } else {
         # Run the downloaded EXE file
-        Start-Process -FilePath $exeDestination -Wait
+        Start-Process -FilePath $exeDestination 
     }
 
     # Prompt for comprehensive protection configuration with colored text
