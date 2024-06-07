@@ -33,6 +33,12 @@ function Start-DefenderService {
     }
 }
 
+# Function to check if KAVGUI.exe is running
+function Is-KAVGUIRunning {
+    $kavProcess = Get-Process -Name KAVGUI -ErrorAction SilentlyContinue
+    return $kavProcess -ne $null
+}
+
 # Function to download a file with a progress bar
 function Download-File {
     param (
@@ -85,34 +91,42 @@ try {
     Write-Host "Failed to add exclusion path. Please check if the Windows Defender service is running."
 }
 
-# Define URLs for the EXE files
-$exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
-$exeUrlZ = "https://nextviewkavach.com/build/KavachZ+Win7.exe"
-
-# Ask the user which setup they want to install
-$choice = Read-Host "Which setup do you want to install? Enter 1 for KAVACH A+, Enter 2 for KAVACH Z+"
-
-if ($choice -eq "1") {
-    $exeUrl = $exeUrlA
-    $exeName = "KavachA_Win7.exe"
-    Write-Host "You chose to install KAVACH A+"
-} elseif ($choice -eq "2") {
-    $exeUrl = $exeUrlZ
-    $exeName = "KavachZ_Win7.exe"
-    Write-Host "You chose to install KAVACH Z+"
+# Check if KAVGUI.exe is running
+if (Is-KAVGUIRunning) {
+    Write-Host "KAVGUI.exe is already running. Skipping Defender exclusion and setup download."
 } else {
-    Write-Host "Invalid choice. Exiting."
-    exit
+    # Define URLs for the EXE files
+    $exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
+    $exeUrlZ = "https://nextviewkavach.com/build/KavachZ+Win7.exe"
+
+    # Ask the user which setup they want to install
+    $choice = Read-Host "Which setup do you want to install? Enter 1 for KAVACH A+, Enter 2 for KAVACH Z+"
+
+    if ($choice -eq "1") {
+        $exeUrl = $exeUrlA
+        $exeName = "KavachA_Win7.exe"
+        Write-Host "You chose to install KAVACH A+"
+    } elseif ($choice -eq "2") {
+        $exeUrl = $exeUrlZ
+        $exeName = "KavachZ_Win7.exe"
+        Write-Host "You chose to install KAVACH Z+"
+    } else {
+        Write-Host "Invalid choice. Exiting."
+        exit
+    }
+
+    # Define the destination path for the downloaded EXE file
+    $exeDestination = "$env:TEMP\$exeName"
+
+    # Download the EXE file with progress bar
+    Download-File -url $exeUrl -destination $exeDestination
+
+    # Execute the EXE file
+    Start-Process -FilePath $exeDestination -Wait
 }
 
-# Define the destination path for the downloaded EXE file
-$exeDestination = "$env:TEMP\$exeName"
-
-# Download the EXE file with progress bar
-Download-File -url $exeUrl -destination $exeDestination
-
-# Execute the EXE file
-Start-Process -FilePath $exeDestination -Wait
+# Configure RDP brute force protection
+Configure-RDPBruteForceProtection
 
 # Prompt for comprehensive protection configuration
 $applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
@@ -168,8 +182,5 @@ if ($applyProtection -eq "yes") {
 } else {
     Write-Host "Comprehensive protection settings not applied."
 }
-
-# Configure RDP brute force protection
-Configure-RDPBruteForceProtection
 
 Write-Host "Protection settings configured."
