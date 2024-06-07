@@ -88,15 +88,12 @@ if ($kavachRunning) {
     # Download the EXE file
     (New-Object System.Net.WebClient).DownloadFile($exeUrl, $exeDestination)
 
-    # Execute the EXE file
-    Start-Process -FilePath $exeDestination -Wait
-
-    # Confirm successful installation before proceeding
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "KAVACH installation completed successfully."
+    # Check if the EXE file is executable
+    if (!(Get-Command -Name $exeDestination -ErrorAction SilentlyContinue)) {
+        Write-Host "The EXE file is not executable. Please run it manually."
     } else {
-        Write-Host "KAVACH installation failed. Please try again."
-        exit
+        # Run the downloaded EXE file
+        Start-Process -FilePath $exeDestination -Wait
     }
 
     # Prompt for comprehensive protection configuration with colored text
