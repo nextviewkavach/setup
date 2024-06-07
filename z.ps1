@@ -193,20 +193,19 @@ if ($kavachRunning) {
 
 # Prompt for comprehensive protection configuration with colored text
 $protectionPrompt = @"
-Do you want to apply comprehensive protection?
-This includes:
-  - $(Write-Host "Phishing Protection" -ForegroundColor Blue -NoNewline)
-  - $(Write-Host "Ad Protection" -ForegroundColor Green -NoNewline)
-  - $(Write-Host "Surfing Protection" -ForegroundColor Blue -NoNewline)
-  - $(Write-Host "Tracker Protection" -ForegroundColor Green -NoNewline)
-  - $(Write-Host "Browser Speed Optimization" -ForegroundColor Blue -NoNewline)
-  - $(Write-Host "Malware Protection" -ForegroundColor Green -NoNewline)
-Enter 'yes' or 'no':
+$(Write-Host "Do you want to apply comprehensive protection? This includes:" -ForegroundColor Yellow)
+$(Write-Host "  - Phishing Protection" -ForegroundColor Green)
+$(Write-Host "  - Ad Protection" -ForegroundColor Blue)
+$(Write-Host "  - Surfing Protection" -ForegroundColor Green)
+$(Write-Host "  - Tracker Protection" -ForegroundColor Blue)
+$(Write-Host "  - Browser Speed Optimization" -ForegroundColor Green)
+$(Write-Host "  - Malware Protection" -ForegroundColor Blue)
+Enter 'y' for yes or 'n' for no:
 "@
 
 $applyProtection = Read-Host -Prompt $protectionPrompt
 
-if ($applyProtection -eq "yes") {
+if ($applyProtection -eq "y") {
     # Apply DNS over HTTPS settings
     Configure-DNSOverHTTPS
 } else {
