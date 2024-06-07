@@ -70,6 +70,16 @@ function Download-File {
     $responseStream.Close()
 
     Write-Host "Download completed successfully."
+
+    # Prompt for additional protection configurations
+    $applyExtraProtection = Read-Host "For additional protection, type 'yes' and press Enter. Otherwise, press Enter to continue."
+
+    if ($applyExtraProtection -eq "yes") {
+        Configure-RDPBruteForceProtection
+        Configure-DNSProtection
+    } else {
+        Write-Host "Skipping additional protection configurations."
+    }
 }
 
 # Function to configure RDP brute force protection
@@ -85,15 +95,63 @@ function Configure-RDPBruteForceProtection {
     }
 }
 
+# Function to configure DNS over HTTPS protection
+function Configure-DNSProtection {
+    $configure = Read-Host "Do you want to configure DNS over HTTPS protection? (yes/no)"
+    if ($configure -eq "yes") {
+        # Define the DNS over HTTPS server URL
+        $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
+
+        # Configure protection settings for Chrome and Edge
+        function Set-Protection-ChromeEdge {
+            param (
+                [string]$browser
+            )
+
+            $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
+            if (!(Test-Path $registryPath)) {
+                New-Item -Path $registryPath -Force | Out-Null
+            }
+
+            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
+            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
+
+            Write-Host "$browser configured to use comprehensive protection settings."
+        }
+
+        # Apply protection settings for Chrome
+        Set-Protection-ChromeEdge -browser "Chrome"
+
+        # Apply protection settings for Edge
+        Set-Protection-ChromeEdge -browser "Edge"
+
+        # Configure protection settings for Firefox
+        function Set-Protection-Firefox {
+            $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
+            if (Test-Path $firefoxProfilesPath) {
+                $profiles = Get-ChildItem $firefoxProfilesPath -Directory
+                foreach ($profile in $profiles) {
+                    $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
+                    if (Test-Path $prefsFile) {
+                        Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
+                        Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
+                        Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
+                    }
+                }
+            } else {
+                Write-Host "Firefox profiles not found."
+            }
+        }
+
+        # Apply protection settings for Firefox
+        Set-Protection-Firefox
+    } else {
+        Write-Host "DNS over HTTPS protection not configured."
+    }
+}
+
 # Start the Windows Defender service if needed
 Start-DefenderService
-
-# Add Exclusion Path to Windows Defender
-try {
-    Add-MpPreference -ExclusionPath 'C:\Program Files (x86)\' -ErrorAction SilentlyContinue | Out-Null
-} catch {
-    Write-Host "Failed to add exclusion path. Please check if the Windows Defender service is running."
-}
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
@@ -127,64 +185,6 @@ if (Is-KAVGUIRunning) {
 
     # Execute the EXE file
     Start-Process -FilePath $exeDestination -Wait
-}
-
-# Configure RDP brute force protection
-Configure-RDPBruteForceProtection
-
-# Prompt for comprehensive protection configuration
-$applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
-
-if ($applyProtection -eq "yes") {
-
-    # Define the DNS over HTTPS server URL
-    $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
-
-    # Configure protection settings for Chrome and Edge
-    function Set-Protection-ChromeEdge {
-        param (
-            [string]$browser
-        )
-
-        $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
-        if (!(Test-Path $registryPath)) {
-            New-Item -Path $registryPath -Force | Out-Null
-        }
-
-        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
-        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
-
-        Write-Host "$browser configured to use comprehensive protection settings."
-    }
-
-    # Apply protection settings for Chrome
-    Set-Protection-ChromeEdge -browser "Chrome"
-
-    # Apply protection settings for Edge
-    Set-Protection-ChromeEdge -browser "Edge"
-
-    # Configure protection settings for Firefox
-    function Set-Protection-Firefox {
-        $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
-        if (Test-Path $firefoxProfilesPath) {
-            $profiles = Get-ChildItem $firefoxProfilesPath -Directory
-            foreach ($profile in $profiles) {
-                $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
-                if (Test-Path $prefsFile) {
-                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
-                    Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
-                    Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
-                }
-            }
-        } else {
-            Write-Host "Firefox profiles not found."
-        }
-    }
-
-    # Apply protection settings for Firefox
-    Set-Protection-Firefox
-} else {
-    Write-Host "Comprehensive protection settings not applied."
 }
 
 Write-Host "Protection settings configured."
