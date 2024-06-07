@@ -75,10 +75,36 @@ function Download-File {
     $applyExtraProtection = Read-Host "For additional protection, type 'yes' and press Enter. Otherwise, press Enter to continue."
 
     if ($applyExtraProtection -eq "yes") {
-        Configure-RDPBruteForceProtection
+        Configure-ADProtection
+        Configure-PhishingProtection
         Configure-DNSProtection
+        Configure-RDPBruteForceProtection
     } else {
         Write-Host "Skipping additional protection configurations."
+    }
+}
+
+# Function to configure Anti-Phishing protection
+function Configure-PhishingProtection {
+    $configure = Read-Host "Do you want to configure Anti-Phishing protection? (yes/no)"
+    if ($configure -eq "yes") {
+        # Configure Anti-Phishing settings
+        # Example: Add your code here
+        Write-Host "Anti-Phishing protection configured."
+    } else {
+        Write-Host "Anti-Phishing protection not configured."
+    }
+}
+
+# Function to configure AD (Ad Tracking) protection
+function Configure-ADProtection {
+    $configure = Read-Host "Do you want to configure AD (Ad Tracking) protection? (yes/no)"
+    if ($configure -eq "yes") {
+        # Configure AD (Ad Tracking) protection settings
+        # Example: Add your code here
+        Write-Host "AD (Ad Tracking) protection configured."
+    } else {
+        Write-Host "AD (Ad Tracking) protection not configured."
     }
 }
 
@@ -155,36 +181,14 @@ Start-DefenderService
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
-    Write-Host "kavgui.exe is already running. Skipping setup download."
-} else {
-    # Define URLs for the EXE files
-    $exeUrlA = "https://nextviewkavach.com/build/KavachA+Win7.exe"
-    $exeUrlZ = "https://nextviewkavach.com/build/KavachZ+Win7.exe"
-
-    # Ask the user which setup they want to install
-    $choice = Read-Host "Which setup do you want to install? Enter 1 for KAVACH A+, Enter 2 for KAVACH Z+"
-
-    if ($choice -eq "1") {
-        $exeUrl = $exeUrlA
-        $exeName = "KavachA_Win7.exe"
-        Write-Host "You chose to install KAVACH A+"
-    } elseif ($choice -eq "2") {
-        $exeUrl = $exeUrlZ
-        $exeName = "KavachZ_Win7.exe"
-        Write-Host "You chose to install KAVACH Z+"
+    $applyNewSettings = Read-Host "kavgui.exe is running. Do you want to apply new protection settings? (yes/no)"
+    if ($applyNewSettings -eq "yes") {
+        Download-File
     } else {
-        Write-Host "Invalid choice. Exiting."
-        exit
+        Write-Host "Skipping additional protection configurations."
     }
-
-    # Define the destination path for the downloaded EXE file
-    $exeDestination = "$env:TEMP\$exeName"
-
-    # Download the EXE file with progress bar
-    Download-File -url $exeUrl -destination $exeDestination
-
-    # Execute the EXE file
-    Start-Process -FilePath $exeDestination -Wait
+} else {
+    Download-File
 }
 
 Write-Host "Protection settings configured."
