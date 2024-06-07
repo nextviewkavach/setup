@@ -195,11 +195,11 @@ if ($kavachRunning) {
 $protectionPrompt = @"
 $(Write-Host "Do you want to apply comprehensive protection? This includes:" -ForegroundColor Yellow)
 $(Write-Host "  - Phishing Protection" -ForegroundColor Green)
-$(Write-Host "  - Ad Protection" -ForegroundColor Blue)
+$(Write-Host "  - Ad Protection" -ForegroundColor White)
 $(Write-Host "  - Surfing Protection" -ForegroundColor Green)
-$(Write-Host "  - Tracker Protection" -ForegroundColor Blue)
+$(Write-Host "  - Tracker Protection" -ForegroundColor White)
 $(Write-Host "  - Browser Speed Optimization" -ForegroundColor Green)
-$(Write-Host "  - Malware Protection" -ForegroundColor Blue)
+$(Write-Host "  - Malware Protection" -ForegroundColor White)
 Enter 'y' for yes or 'n' for no:
 "@
 
