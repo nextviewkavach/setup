@@ -224,3 +224,5 @@ if (Is-KAVGUIRunning) {
         Configure-ADAndPhishingProtection
     } else {
         Write-Host "Skipping additional protection configurations."
+    }
+}
