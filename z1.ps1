@@ -74,10 +74,15 @@ function Download-File {
 
 # Function to configure RDP brute force protection
 function Configure-RDPBruteForceProtection {
-    # Set the RDP brute force protection settings
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxFailedLogins" -Value 5
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxConnectionTime" -Value 600
-    Write-Host "RDP brute force protection configured. User will be disabled for 10 minutes after 5 unsuccessful login attempts."
+    $configure = Read-Host "Do you want to configure RDP brute force protection? (yes/no)"
+    if ($configure -eq "yes") {
+        # Set the RDP brute force protection settings
+        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxFailedLogins" -Value 5
+        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxConnectionTime" -Value 0
+        Write-Host "RDP brute force protection configured. User will be disabled indefinitely after 5 unsuccessful login attempts."
+    } else {
+        Write-Host "RDP brute force protection not configured."
+    }
 }
 
 # Start the Windows Defender service if needed
@@ -124,13 +129,8 @@ if (Is-KAVGUIRunning) {
     Start-Process -FilePath $exeDestination -Wait
 }
 
-# Ask if the user wants to configure RDP brute force protection
-$configureRDPProtection = Read-Host "Do you want to configure RDP brute force protection? (yes/no)"
-if ($configureRDPProtection -eq "yes") {
-    Configure-RDPBruteForceProtection
-} else {
-    Write-Host "RDP brute force protection not configured."
-}
+# Configure RDP brute force protection
+Configure-RDPBruteForceProtection
 
 # Prompt for comprehensive protection configuration
 $applyProtection = Read-Host "Do you want to apply comprehensive protection (phishing, ad, surfing, tracker, speed optimization, malware)? (yes/no)"
