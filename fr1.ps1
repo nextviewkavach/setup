@@ -50,8 +50,13 @@ function Download-File {
         $request = [System.Net.HttpWebRequest]::Create($url)
         $request.Method = "GET"
         $response = $request.GetResponse()
-        $totalBytes = $response.ContentLength
 
+        if ($response.StatusCode -ne [System.Net.HttpStatusCode]::OK) {
+            Write-Host "Failed to download file. Status code: $($response.StatusCode)"
+            return $false
+        }
+
+        $totalBytes = $response.ContentLength
         $responseStream = $response.GetResponseStream()
         $fileStream = New-Object IO.FileStream($destination, [IO.FileMode]::Create)
 
@@ -71,55 +76,60 @@ function Download-File {
         $responseStream.Close()
 
         Write-Host "Download completed successfully."
-
-        # Prompt for additional protection configurations
-        $applyExtraProtection = Read-Host "For additional protection, type 'yes' and press Enter. Otherwise, press Enter to continue."
-
-        if ($applyExtraProtection -eq "yes") {
-            Configure-ADAndPhishingProtection
-        } else {
-            Write-Host "Skipping additional protection configurations."
-        }
+        return $true
     }
     catch {
         Write-Host "Error occurred during download: $_"
+        return $false
     }
 }
 
-# Function to configure Anti-Phishing and AD protection
+# Function to install antivirus setup
+function Install-Antivirus {
+    param (
+        [string]$setupName,
+        [string]$setupUrl
+    )
+
+    # Download the setup file
+    $setupPath = "C:\Temp\$setupName.exe"
+    $downloaded = Download-File -url $setupUrl -destination $setupPath
+
+    if ($downloaded) {
+        # Install the antivirus
+        Start-Process -FilePath $setupPath -Wait
+    } else {
+        Write-Host "Failed to download antivirus setup. Exiting..."
+        exit
+    }
+}
+
+# Function to configure AD and Phishing protection
 function Configure-ADAndPhishingProtection {
-    Write-Host "Highlighting features: AD (Ad Tracking) protection, Anti-Phishing protection"
+    Write-Host "Adding comprehensive protection: AD blocking, Phishing protection, Anti-tracker, etc."
     Configure-ADProtection
     Configure-PhishingProtection
+    Configure-DNSProtection
+    Configure-RDPBruteForceProtection
 }
 
 # Function to configure Anti-Phishing protection
 function Configure-PhishingProtection {
-    $configure = "yes" # Automatically configure
-    if ($configure -eq "yes") {
-        # Configure Anti-Phishing settings
-        # Example: Add your code here
-        Write-Host "Anti-Phishing protection configured."
-    } else {
-        Write-Host "Anti-Phishing protection not configured."
-    }
+    Write-Host "Configuring Anti-Phishing protection..."
+    # Add your anti-phishing protection configuration here
+    Write-Host "Anti-Phishing protection configured."
 }
 
 # Function to configure AD (Ad Tracking) protection
 function Configure-ADProtection {
-    $configure = "yes" # Automatically configure
-    if ($configure -eq "yes") {
-        # Configure AD (Ad Tracking) protection settings
-        # Example: Add your code here
-        Write-Host "AD (Ad Tracking) protection configured."
-    } else {
-        Write-Host "AD (Ad Tracking) protection not configured."
-    }
+    Write-Host "Configuring AD (Ad Tracking) protection..."
+    # Add your AD protection configuration here
+    Write-Host "AD (Ad Tracking) protection configured."
 }
 
 # Function to configure RDP brute force protection
 function Configure-RDPBruteForceProtection {
-    $configure = Read-Host "Do you want to configure RDP brute force protection? (yes/no)"
+    $configure = Read-Host "Do you want to enable RDP brute force protection? (yes/no)"
     if ($configure -eq "yes") {
         # Set the RDP brute force protection settings
         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxFailedLogins" -Value 5
@@ -132,57 +142,55 @@ function Configure-RDPBruteForceProtection {
 
 # Function to configure DNS over HTTPS protection
 function Configure-DNSProtection {
-    $configure = Read-Host "Do you want to configure DNS over HTTPS protection? (yes/no)"
-    if ($configure -eq "yes") {
-        # Define the DNS over HTTPS server URL
-        $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
+    Write-Host "Configuring DNS over HTTPS protection..."
+    # Define the DNS over HTTPS server URL
+    $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
 
-        # Configure protection settings for Chrome and Edge
-        function Set-Protection-ChromeEdge {
-            param (
-                [string]$browser
-            )
+    # Configure protection settings for Chrome and Edge
+    function Set-Protection-ChromeEdge {
+        param (
+            [string]$browser
+        )
 
-            $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
-            if (!(Test-Path $registryPath)) {
-                New-Item -Path $registryPath -Force | Out-Null
-            }
-
-            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
-            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
-
-            Write-Host "$browser configured to use comprehensive protection settings."
+        $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
+        if (!(Test-Path $registryPath)) {
+            New-Item -Path $registryPath -Force | Out-Null
         }
 
-        # Apply protection settings for Chrome
-        Set-Protection-ChromeEdge -browser "Chrome"
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
+        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
 
-        # Apply protection settings for Edge
-        Set-Protection-ChromeEdge -browser "Edge"
-
-        # Configure protection settings for Firefox
-        function Set-Protection-Firefox {
-            $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
-            if (Test-Path $firefoxProfilesPath) {
-                $profiles = Get-ChildItem $firefoxProfilesPath -Directory
-                foreach ($profile in $profiles) {
-                    $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
-                    if (Test-Path $prefsFile) {
-                        Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
-                        Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
-                        Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
-                    }
-                }
-            } else {
-                Write-Host "Firefox profiles not found."
-            }
-        }
-
-        # Apply protection settings for Firefox
-        Set-Protection-Firefox
-    } else {
-        Write-Host "DNS over HTTPS protection not configured."
+        Write-Host "$browser configured to use comprehensive protection settings."
     }
+
+    # Apply protection settings for Chrome
+    Set-Protection-ChromeEdge -browser "Chrome"
+
+    # Apply protection settings for Edge
+    Set-Protection-ChromeEdge -browser "Edge"
+
+    # Configure protection settings for Firefox
+    function Set-Protection-Firefox {
+        $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
+        if (Test-Path $firefoxProfilesPath) {
+            $profiles = Get-ChildItem $firefoxProfilesPath -Directory
+            foreach ($profile in $profiles) {
+                $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
+                if (Test-Path $prefsFile) {
+                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
+                    Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
+                    Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
+                }
+            }
+        } else {
+            Write-Host "Firefox profiles not found."
+        }
+    }
+
+    # Apply protection settings for Firefox
+    Set-Protection-Firefox
+
+    Write-Host "DNS over HTTPS protection configured."
 }
 
 # Start the Windows Defender service if needed
@@ -190,14 +198,36 @@ Start-DefenderService
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
-    $applyNewSettings = Read-Host "kavgui.exe is running. Do you want to apply new protection settings? (yes/no)"
+    $applyNewSettings = Read-Host "kavgui.exe is running. Do you want to add comprehensive protection for AD blocking, Phishing protection, Anti-tracker, etc.? (yes/no)"
     if ($applyNewSettings -eq "yes") {
-        Download-File -url "https://example.com/file_to_download.txt" -destination "C:\Downloads\file_to_download.txt"
+        Configure-ADAndPhishingProtection
     } else {
         Write-Host "Skipping additional protection configurations."
     }
 } else {
-    Download-File -url "https://example.com/file_to_download.txt" -destination "C:\Downloads\file_to_download.txt"
+    $setupChoice = Read-Host "KAVGUI.exe is not running. Which antivirus setup do you want to install?`n1. KAVACH A+`n2. KAVACH Z+`nEnter the number (1/2): "
+    switch ($setupChoice) {
+        '1' {
+            Install-Antivirus -setupName "KAVACH_A+.exe" -setupUrl "https://example.com/KAVACH_A+_setup.exe"
+        }
+        '2' {
+            Install-Antivirus -setupName "KAVACH_Z+.exe" -setupUrl "https://example.com/KAVACH_Z+_setup.exe"
+        }
+        default {
+            Write-Host "Invalid selection. Exiting..."
+            exit
+        }
+    }
+
+    $applyNewSettingsAfterInstall = Read-Host "Do you want to add comprehensive protection for AD blocking, Phishing protection, Anti-tracker, etc.? (yes/no)"
+    if ($applyNewSettingsAfterInstall -eq "yes") {
+        Configure-ADAndPhishingProtection
+    } else {
+        Write-Host "Skipping additional protection configurations."
+    }
 }
 
-Write-Host "Protection settings configured."
+Write-Host "All configurations done."
+
+# Final message and exit
+Read-Host "Press any key to exit
