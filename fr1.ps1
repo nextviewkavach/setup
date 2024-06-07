@@ -208,10 +208,10 @@ if (Is-KAVGUIRunning) {
     $setupChoice = Read-Host "KAVGUI.exe is not running. Which antivirus setup do you want to install?`n1. KAVACH A+`n2. KAVACH Z+`nEnter the number (1/2): "
     switch ($setupChoice) {
         '1' {
-            Install-Antivirus -setupName "KAVACH_A+.exe" -setupUrl "https://example.com/KAVACH_A+_setup.exe"
+            Install-Antivirus -setupName "KAVACH_A+.exe" -setupUrl "https://nextviewkavach.com/build/KavachA+.exe"
         }
         '2' {
-            Install-Antivirus -setupName "KAVACH_Z+.exe" -setupUrl "https://example.com/KAVACH_Z+_setup.exe"
+            Install-Antivirus -setupName "KAVACH_Z+.exe" -setupUrl "https://nextviewkavach.com/build/KavachZ+.exe"
         }
         default {
             Write-Host "Invalid selection. Exiting..."
