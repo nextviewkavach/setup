@@ -104,125 +104,24 @@ function Install-Antivirus {
     }
 }
 
-# Function to configure AD and Phishing protection
-function Configure-ADAndPhishingProtection {
-    Write-Host "Adding comprehensive protection: AD blocking, Phishing protection, Anti-tracker, etc."
-    Configure-ADProtection
-    Configure-PhishingProtection
-    Configure-DNSProtection
-    Configure-RDPBruteForceProtection
-}
-
-# Function to configure Anti-Phishing protection
-function Configure-PhishingProtection {
-    Write-Host "Configuring Anti-Phishing protection..."
-    # Add your anti-phishing protection configuration here
-    Write-Host "Anti-Phishing protection configured."
-}
-
-# Function to configure AD (Ad Tracking) protection
-function Configure-ADProtection {
-    Write-Host "Configuring AD (Ad Tracking) protection..."
-    # Add your AD protection configuration here
-    Write-Host "AD (Ad Tracking) protection configured."
-}
-
-# Function to configure RDP brute force protection
-function Configure-RDPBruteForceProtection {
-    $configure = Read-Host "Do you want to enable RDP brute force protection? (yes/no)"
-    if ($configure -eq "yes") {
-        # Set the RDP brute force protection settings
-        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxFailedLogins" -Value 5
-        Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "MaxConnectionTime" -Value 0
-        Write-Host "RDP brute force protection configured. User will be disabled indefinitely after 5 unsuccessful login attempts."
-    } else {
-        Write-Host "RDP brute force protection not configured."
-    }
-}
-
-# Function to configure DNS over HTTPS protection
-function Configure-DNSProtection {
-    Write-Host "Configuring DNS over HTTPS protection..."
-    # Define the DNS over HTTPS server URL
-    $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
-
-    # Configure protection settings for Chrome and Edge
-    function Set-Protection-ChromeEdge {
-        param (
-            [string]$browser
-        )
-
-        $registryPath = "HKLM:\Software\Policies\Microsoft\$browser"
-        if (!(Test-Path $registryPath)) {
-            New-Item -Path $registryPath -Force | Out-Null
-        }
-
-        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
-        Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
-
-        Write-Host "$browser configured to use comprehensive protection settings."
-    }
-
-    # Apply protection settings for Chrome
-    Set-Protection-ChromeEdge -browser "Chrome"
-
-    # Apply protection settings for Edge
-    Set-Protection-ChromeEdge -browser "Edge"
-
-    # Configure protection settings for Firefox
-    function Set-Protection-Firefox {
-        $firefoxProfilesPath = "$env:APPDATA\Mozilla\Firefox\Profiles\"
-        if (Test-Path $firefoxProfilesPath) {
-            $profiles = Get-ChildItem $firefoxProfilesPath -Directory
-            foreach ($profile in $profiles) {
-                $prefsFile = "$firefoxProfilesPath\$profile\prefs.js"
-                if (Test-Path $prefsFile) {
-                    Add-Content -Path $prefsFile -Value 'user_pref("network.trr.mode", 2);'
-                    Add-Content -Path $prefsFile -Value "user_pref('network.trr.uri', '$dnsServerUrl');"
-                    Write-Host "Firefox profile $profile configured to use comprehensive protection settings."
-                }
-            }
-        } else {
-            Write-Host "Firefox profiles not found."
-        }
-    }
-
-    # Apply protection settings for Firefox
-    Set-Protection-Firefox
-
-    Write-Host "DNS over HTTPS protection configured."
-}
-
 # Start the Windows Defender service if needed
 Start-DefenderService
 
 # Check if KAVGUI.exe is running
 if (Is-KAVGUIRunning) {
-    $applyNewSettings = Read-Host "kavgui.exe is running. Do you want to add comprehensive protection for AD blocking, Phishing protection, Anti-tracker, etc.? (yes/no)"
-    if ($applyNewSettings -eq "yes") {
-        Configure-ADAndPhishingProtection
-    } else {
-        Write-Host "Skipping additional protection configurations."
-    }
+    Write-Host "kavgui.exe is running. Skipping antivirus setup installation."
 } else {
     $setupChoice = Read-Host "KAVGUI.exe is not running. Which antivirus setup do you want to install?`n1. KAVACH A+`n2. KAVACH Z+`nEnter the number (1/2): "
     switch ($setupChoice) {
         '1' {
-            Install-Antivirus -setupName "KAVACH_A+.exe" -setupUrl "https://nextviewkavach.com/build/KavachA+.exe"
+            Install-Antivirus -setupName "KavachA+.exe" -setupUrl "https://nextviewkavach.com/build/KavachA+.exe"
         }
         '2' {
-            Install-Antivirus -setupName "KAVACH_Z+.exe" -setupUrl "https://nextviewkavach.com/build/KavachZ+.exe"
+            Install-Antivirus -setupName "KavachZ+.exe" -setupUrl "https://nextviewkavach.com/build/KavachZ+.exe"
         }
         default {
             Write-Host "Invalid selection. Exiting..."
             exit
         }
-    }
-
-    $applyNewSettingsAfterInstall = Read-Host "Do you want to add comprehensive protection for AD blocking, Phishing protection, Anti-tracker, etc.? (yes/no)"
-    if ($applyNewSettingsAfterInstall -eq "yes") {
-        Configure-ADAndPhishingProtection
-    } else {
-        Write-Host "Skipping additional protection configurations."
     }
 }
