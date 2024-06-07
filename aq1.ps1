@@ -84,6 +84,27 @@ function Download-File {
     }
 }
 
+# Function to prompt for additional protection
+function Prompt-AdditionalProtection {
+    $applyExtraProtection = Read-Host "Do you want to apply additional protection features? (yes/no)"
+    if ($applyExtraProtection -eq "yes") {
+        Apply-AdditionalProtection
+    } else {
+        Write-Host "Skipping additional protection configurations."
+    }
+}
+
+# Function to apply additional protection
+function Apply-AdditionalProtection {
+    $applyProtection = Read-Host "Do you want to apply additional protection features? (yes/no)"
+    if ($applyProtection -eq "yes") {
+        Write-Host "Applying additional protection features..."
+        # Call functions to configure and apply specific protections
+    } else {
+        Write-Host "Skipping additional protection configurations."
+    }
+}
+
 # Function to prompt for antivirus setup choice
 function Prompt-AntivirusSetupChoice {
     $antivirusSetupChoice = Read-Host @"
@@ -127,8 +148,8 @@ if (-not (Is-KAVGUIRunning)) {
     # Download Setup
     Download-File -url $setupURL -destination "$env:USERPROFILE\Documents\KAVSetup.exe"
     
-    # Run Setup
-    Start-Process -FilePath "$env:USERPROFILE\Documents\KAVSetup.exe" -Wait
+    # Prompt for additional protection
+    Prompt-AdditionalProtection
 }
 
 # Finalize and exit
