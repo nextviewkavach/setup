@@ -31,7 +31,7 @@ function Configure-DNSProtection {
                 New-Item -Path $registryPath -Force | Out-Null
             }
 
-            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
+            Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "2" -Type DWord
             Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
 
             Write-Host "$browser configured to use comprehensive protection settings."
