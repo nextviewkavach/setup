@@ -66,19 +66,39 @@ function Configure-RDPProtection {
     Write-Output "Lockout duration: $lockoutDurationMinutes minutes"
 }
 
-# Function to download a file with progress
+# Function to download a file with progress using HttpClient
 function Download-FileWithProgress {
     param (
         [string]$url,
         [string]$outputPath
     )
 
-    $webClient = New-Object System.Net.WebClient
-    $webClient.DownloadProgressChanged += {
-        param ($sender, $e)
-        Write-Progress -Activity "Downloading" -Status "$($e.ProgressPercentage)% Complete:" -PercentComplete $e.ProgressPercentage
+    $httpClient = New-Object System.Net.Http.HttpClient
+    $httpClient.Timeout = [System.TimeSpan]::FromMinutes(30)
+
+    $response = $httpClient.GetAsync($url, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+    $response.EnsureSuccessStatusCode()
+
+    $totalBytes = $response.Content.Headers.ContentLength
+    $stream = $response.Content.ReadAsStreamAsync().Result
+    $fileStream = [System.IO.File]::Create($outputPath)
+    $buffer = New-Object byte[] 8192
+    $totalRead = 0
+    $isMoreToRead = $true
+
+    while ($isMoreToRead) {
+        $read = $stream.ReadAsync($buffer, 0, $buffer.Length).Result
+        if ($read -eq 0) {
+            $isMoreToRead = $false
+        } else {
+            $fileStream.WriteAsync($buffer, 0, $read).Wait()
+            $totalRead += $read
+            $percentComplete = [math]::Round(($totalRead / $totalBytes) * 100, 2)
+            Write-Progress -Activity "Downloading" -Status "$percentComplete% Complete" -PercentComplete $percentComplete
+        }
     }
-    $webClient.DownloadFile($url, $outputPath)
+
+    $fileStream.Close()
 }
 
 # Main logic
