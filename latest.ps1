@@ -40,7 +40,7 @@ function Configure-DNSOverHTTPSForChrome {
     Set-ItemProperty -Path $chromePolicyPath -Name "DnsOverHttpsMode" -Value "secure" -Type String
     Set-ItemProperty -Path $chromePolicyPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
 
-    Write-Output "DNS over HTTPS configured for Google Chrome. Please restart Google Chrome to apply the changes."
+    Write-Output "K-WebGuard configured for Google Chrome. Please restart Google Chrome to apply the changes."
 }
 
 # Function to configure DNS over HTTPS for Microsoft Edge
@@ -55,7 +55,7 @@ function Configure-DNSOverHTTPSForEdge {
     Set-ItemProperty -Path $edgePolicyPath -Name "DnsOverHttpsMode" -Value "automatic" -Type String
     Set-ItemProperty -Path $edgePolicyPath -Name "DnsOverHttpsTemplates" -Value $dnsServerUrl -Type String
 
-    Write-Output "DNS over HTTPS configured for Microsoft Edge. Please restart Microsoft Edge to apply the changes."
+    Write-Output "K-WebGuard configured for Google Chrome. Please restart Microsoft Edge to apply the changes."
 }
 
 # Function to configure RDP brute force protection
@@ -93,30 +93,30 @@ function Download-FileWithProgress {
 function Apply-AdditionalProtection {
     $dnsServerUrl = "https://dns.dnswarden.com/00s8000000000000001000ivo"
     
-    $enableFirefoxProtection = Read-Host "Do you want to enable DNS over HTTPS for Firefox? (y/n)"
+    $enableFirefoxProtection = Read-Host "Do you want to enable K-WebGuard for Firefox? (y/n)"
     if ($enableFirefoxProtection -eq 'y') {
         try {
             Set-DNSOverHTTPSFirefox
         } catch {
-            Write-Output "Failed to set DNS over HTTPS for Firefox."
+            Write-Output "Failed to configure K-WebGuard for Firefox."
         }
     }
 
-    $enableChromeProtection = Read-Host "Do you want to enable DNS over HTTPS for Google Chrome? (y/n)"
+    $enableChromeProtection = Read-Host "Do you want to enable K-WebGuard for Google Chrome? (y/n)"
     if ($enableChromeProtection -eq 'y') {
         try {
             Configure-DNSOverHTTPSForChrome -dnsServerUrl $dnsServerUrl
         } catch {
-            Write-Output "Failed to configure DNS over HTTPS for Google Chrome."
+            Write-Output "Failed to configure K-WebGuard for Google Chrome."
         }
     }
 
-    $enableEdgeProtection = Read-Host "Do you want to enable DNS over HTTPS for Microsoft Edge? (y/n)"
+    $enableEdgeProtection = Read-Host "Do you want to enable K-WebGuard for Microsoft Edge? (y/n)"
     if ($enableEdgeProtection -eq 'y') {
         try {
             Configure-DNSOverHTTPSForEdge -dnsServerUrl $dnsServerUrl
         } catch {
-            Write-Output "Failed to configure DNS over HTTPS for Microsoft Edge."
+            Write-Output "Failed to configure K-WebGuard for Microsoft Edge.."
         }
     }
 
