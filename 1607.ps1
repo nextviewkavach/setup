@@ -12,4 +12,4 @@ Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -Value "secure"
 # Set the DNS-over-HTTPS templates to the specified DNS server URL
 Set-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -Value "https://dns.dnswarden.com/0000000000000000000000804"
 
-Write-Output "DNS-over-HTTPS policy has been set to secure mode with the specified DNS server."
+Write-Output "web protection is now enabled."
