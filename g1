@@ -1,0 +1,23 @@
+# Define the registry path for Chrome policies
+$registryPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+
+# Check if the registry path exists
+if (Test-Path $registryPath) {
+    # Remove the DNS-over-HTTPS mode entry
+    if (Get-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode" -ErrorAction SilentlyContinue) {
+        Remove-ItemProperty -Path $registryPath -Name "DnsOverHttpsMode"
+    }
+
+    # Remove the DNS-over-HTTPS templates entry
+    if (Get-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates" -ErrorAction SilentlyContinue) {
+        Remove-ItemProperty -Path $registryPath -Name "DnsOverHttpsTemplates"
+    }
+
+    # Check if the Chrome key is empty and remove it if it is
+    $properties = Get-Item -Path $registryPath
+    if ($properties.Property.Count -eq 0) {
+        Remove-Item -Path $registryPath
+    }
+}
+
+Write-Output "web protection settings have been removed."
